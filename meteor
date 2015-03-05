@@ -3,6 +3,7 @@ import argparse # optparse is deprecated
 from itertools import islice # slicing for iterators
 from nltk.stem import PorterStemmer
 from nltk.corpus import wordnet
+import sys
 
 def word_matches(h, ref):
     return sum(1 for w in h if w in ref)
@@ -22,35 +23,42 @@ class Meteor:
     # Creates mapping between words, such that every word in each string 
     # maps to at most one word in the other string.
     def create_word_alignment(self, translation, reference): 
-        mappings = dict(zip(translation, [[] for _ in range(len(translation))]))
+        mappings = dict(zip(translation, [set() for _ in range(len(translation))]))
         for word in translation:
             for exact in self.exact_module(word, reference):
-                mappings[word].append(exact)
+                mappings[word].add(exact)
 
             for stemmed in self.porter_module(word, reference):
-                mappings[word].append(stemmed)
+                mappings[word].add(stemmed)
 
             for synonym in self.wordnet_module(word, reference):
-                mappings[word].append(synonym)
+                mappings[word].add(synonym)
                     
     def exact_module(self, word, reference):
-        yield word if word in reference else None
+        if word in reference:
+            yield word
 
     def porter_module(self, word, reference):
-        stemmed = self.stemmer(word)
-        for ref_word in reference:
-            if stemmed == self.stemmer(ref_word):
-                yield str(ref_word)
+        if all(ord(c) < 128 for c in word):
+            stemmed = str(self.stemmer.stem(word))
+            for ref_word in reference:
+                if all(ord(c) < 128 for c in ref_word):
+                    if stemmed == str(self.stemmer.stem(ref_word)):
+                        yield ref_word
+            
 
     def wordnet_module(self, word, reference):
-        synsets_trans = set(wordnet.synsets(word))
-        for ref_word in reference:
-            synsets_ref = set(wordnet.synsets(ref_word))
-            if bool(synsets_trans & synsets_ref):
-                yield ref_word
+        if all(ord(c) < 128 for c in word):
+            synsets_trans = set(wordnet.synsets(word))
+            for ref_word in reference:
+                if all(ord(c) < 128 for c in ref_word):
+                    synsets_ref = set(wordnet.synsets(ref_word))
+                    if bool(synsets_trans & synsets_ref):
+                        yield ref_word
 
     def run_meteor(self):
         # note: the -n option does not work in the original code
+        count = 0
         for h1, h2, ref in islice(self.sentences, self.num_sentences):
             score_1 = self.score(h1, ref)
             score_2 = self.score(h2, ref)
@@ -62,6 +70,9 @@ class Meteor:
             print(1 if h1_match > h2_match else # \begin{cases}
                     (0 if h1_match == h2_match
                         else -1)) # \end{cases}
+            count += 1
+            if count % 100 == 0:
+                sys.stderr.write(str(count) + " finished. ")
  
 def sentences(data):
     with open(data) as f:
