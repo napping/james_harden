@@ -1,0 +1,83 @@
+#!/usr/bin/env python
+import argparse # optparse is deprecated
+from itertools import islice # slicing for iterators
+from nltk.stem import PorterStemmer
+from nltk.corpus import wordnet
+
+def word_matches(h, ref):
+    return sum(1 for w in h if w in ref)
+
+
+class Meteor:
+    def __init__(self, sentences, num_sentences): 
+        self.sentences = sentences
+        self.num_sentences = num_sentences
+        self.stemmer = PorterStemmer()
+        self.wordnet = wordnet
+
+    def score(self, translation, reference):
+        alignment = self.create_word_alignment(translation, reference)
+        return alignment
+
+    # Creates mapping between words, such that every word in each string 
+    # maps to at most one word in the other string.
+    def create_word_alignment(self, translation, reference): 
+        mappings = dict(zip(translation, [[] for _ in range(len(translation))]))
+        for word in translation:
+            for exact in self.exact_module(word, reference):
+                mappings[word].append(exact)
+
+            for stemmed in self.porter_module(word, reference):
+                mappings[word].append(stemmed)
+
+            for synonym in self.wordnet_module(word, reference):
+                mappings[word].append(synonym)
+                    
+    def exact_module(self, word, reference):
+        yield word if word in reference else None
+
+    def porter_module(self, word, reference):
+        stemmed = self.stemmer(word)
+        for ref_word in reference:
+            if stemmed == self.stemmer(ref_word):
+                yield str(ref_word)
+
+    def wordnet_module(self, word, reference):
+        synsets_trans = set(wordnet.synsets(word))
+        for ref_word in reference:
+            synsets_ref = set(wordnet.synsets(ref_word))
+            if bool(synsets_trans & synsets_ref):
+                yield ref_word
+
+    def run_meteor(self):
+        # note: the -n option does not work in the original code
+        for h1, h2, ref in islice(self.sentences, self.num_sentences):
+            score_1 = self.score(h1, ref)
+            score_2 = self.score(h2, ref)
+
+
+            rset = set(ref)
+            h1_match = word_matches(h1, rset)
+            h2_match = word_matches(h2, rset)
+            print(1 if h1_match > h2_match else # \begin{cases}
+                    (0 if h1_match == h2_match
+                        else -1)) # \end{cases}
+ 
+def sentences(data):
+    with open(data) as f:
+        for pair in f:
+            yield [sentence.strip().split() for sentence in pair.split(' ||| ')]
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Evaluate translation hypotheses.')
+    parser.add_argument('-i', '--input', default='data/hyp1-hyp2-ref',
+            help='input file (default data/hyp1-hyp2-ref)')
+    parser.add_argument('-n', '--num_sentences', default=None, type=int,
+            help='Number of hypothesis pairs to evaluate')
+    opts = parser.parse_args()
+
+    s = sentences(opts.input)
+
+    meteor = Meteor(s, opts.num_sentences)
+    meteor.run_meteor();
