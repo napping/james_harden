@@ -34,6 +34,21 @@ class Meteor:
             for synonym in self.wordnet_module(word, reference):
                 mappings[word].add(synonym)
                     
+        for word in translation:
+            pass
+
+    def generate_alignments(self, translation, reference, mappings, built_up):
+        if (len(translation) == 0):
+            yield built_up
+        else:
+            head = translation.pop(0)
+            for ref_word in mappings[head]:
+                if ref_word in reference:
+                    self.generate_alignments(translation, filter(lambda i: i!=ref_word, reference), mappings, [(head, ref_word)] + built_up)
+
+            self.generate_alignments(translation, reference, mappings, [(head, None)] + built_up)
+
+
     def exact_module(self, word, reference):
         if word in reference:
             yield word
@@ -46,7 +61,6 @@ class Meteor:
                     if stemmed == str(self.stemmer.stem(ref_word)):
                         yield ref_word
             
-
     def wordnet_module(self, word, reference):
         if all(ord(c) < 128 for c in word):
             synsets_trans = set(wordnet.synsets(word))
