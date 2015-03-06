@@ -29,6 +29,9 @@ def remove_weird_words(sentence_list):
     return [word for word in sentence_list if all(ord(c) < 128 for c in word)]
 
 
+def joined(sentence_list):
+    return " ".join(sentence_list)
+
 class Meteor:
     def __init__(self, sentences, num_sentences, alpha, beta, gamma): 
         self.sentences = sentences
@@ -64,7 +67,13 @@ class Meteor:
             mapped_unigrams = 1.0
 
         translation_unigrams = float(len(translation))
+        if translation_unigrams < 1.0:
+            translation_unigrams = 1.0
+
         reference_unigrams = float(len(reference))
+        if reference_unigrams < 1.0:
+            reference_unigrams = 1.0
+
         P = mapped_unigrams / translation_unigrams
         R = mapped_unigrams / reference_unigrams
 
