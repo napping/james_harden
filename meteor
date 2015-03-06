@@ -29,9 +29,7 @@ class Meteor:
             score_1 = self.score(h1, ref)
             score_2 = self.score(h2, ref)
 
-            print(1 if score1 > score2 else
-                    (0 if score1 == score1
-                        else -1))
+            print(1 if score_1 < score_2 else (0 if score_1 == score_2 else -1))
             count += 1
             if count % 100 == 0:
                 sys.stderr.write(str(count) + " finished. ")
@@ -49,7 +47,7 @@ class Meteor:
 
         b = self.beta
         g = self.gamma
-        chunks = self.get_chunks(alignment, translation, reference)
+        chunks = self.get_chunks(best_alignment, translation, reference)
         frag = chunks / mapped_unigrams 
         Pen = (1 - g) * (frag ** b)
 
