@@ -44,10 +44,9 @@ class Meteor:
         # note: the -n option does not work in the original code
         count = 1
         for h1, h2, ref in islice(self.sentences, self.num_sentences):
-            h1 = remove_weird_words(lowercase(h1))
-            h2 = remove_weird_words(lowercase(h2))
-            ref = remove_weird_words(lowercase(ref))
-            print h1, h2, ref
+            h1 = lowercase(remove_weird_words(h1))
+            h2 = lowercase(remove_weird_words(h2))
+            ref = lowercase(remove_weird_words(ref))
 
             score_1 = self.score(h1, ref)
             score_2 = self.score(h2, ref)
