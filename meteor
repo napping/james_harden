@@ -36,7 +36,11 @@ class Meteor:
 
     def score(self, translation, reference):
         best_alignment = self.get_best_alignment(translation, reference)
+
         mapped_unigrams = float(sum([1 for mapping in best_alignment if mapping[1] != None]))
+        if mapped_unigrams == 0.0:
+            mapped_unigrams = 1.0
+
         translation_unigrams = float(len(translation))
         reference_unigrams = float(len(reference))
         P = mapped_unigrams / translation_unigrams
@@ -130,12 +134,15 @@ class Meteor:
         if (len(translation) == 0):
             self.curr_alignments.append(built_up)
         else:
+            append_none = True
             head = translation[0]
             for ref_word in mappings[head]:
                 if ref_word in reference:
+                    append_none = False
                     self.generate_alignments(translation[1:], filter(lambda w: w!=ref_word, reference), mappings, [(head, ref_word)] + built_up)
 
-            self.generate_alignments(translation[1:], reference, mappings, [(head, None)] + built_up)
+            if append_none:
+                self.generate_alignments(translation[1:], reference, mappings, [(head, None)] + built_up)
 
     def exact_module(self, word, reference):
         if word in reference:
