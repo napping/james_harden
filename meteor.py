@@ -29,31 +29,27 @@ class Meteor:
             score_1 = self.score(h1, ref)
             score_2 = self.score(h2, ref)
 
-            print(1 if score1 > score2 else
-                    (0 if score1 == score1
-                        else -1))
+
+            rset = set(ref)
+            # h1_match = word_matches(h1, rset)
+            # h2_match = word_matches(h2, rset)
+            # print(1 if h1_match > h2_match else # \begin{cases}
+                    # (0 if h1_match == h2_match
+                        # else -1)) # \end{cases}
             count += 1
             if count % 100 == 0:
                 sys.stderr.write(str(count) + " finished. ")
 
     def score(self, translation, reference):
         best_alignment = self.get_best_alignment(translation, reference)
-        mapped_unigrams = float(sum([1 for mapping in best_alignment if mapping[1] != None]))
-        translation_unigrams = float(len(translation))
-        reference_unigrams = float(len(reference))
+        mapped_unigrams = sum([1 for mapping in best_alignment if mapping[1] != None])
+        translation_unigrams = len(translation)
+        reference_unigrams = len(reference)
         P = mapped_unigrams / translation_unigrams
         R = mapped_unigrams / reference_unigrams
 
         a = self.alpha
         Fmean = (P * R) / ((a * P) + ((1 - a) * R))
-
-        b = self.beta
-        g = self.gamma
-        chunks = self.get_chunks(alignment, translation, reference)
-        frag = chunks / mapped_unigrams 
-        Pen = (1 - g) * (frag ** b)
-
-        return (1 - Pen) * Fmean
 
     def get_chunks(self, alignment, translation, reference):
         current_chunk = 0
@@ -61,8 +57,8 @@ class Meteor:
         # fugly code =/
         remaining_alignment = alignment
         for i in range(len(translation) - 1):
-            this_align = [mapping for mapping in remaining_alignment if mapping[0] == translation[i]][0]
-            next_align = [mapping for mapping in remaining_alignment if mapping[0] == translation[i+1]][0]
+            this_align = [mapping[1] for mapping in remaining_alignment if mapping[0] == translation[i]]
+            next_align = [mapping[1] for mapping in remaining_alignment if mapping[0] == translation[i+1]]
 
             if len(this_align) == 0 or None in this_align or None in next_align:
                 continue
@@ -70,7 +66,6 @@ class Meteor:
             if (reference.index(this_align[1]) + 1) != (reference.index(next_align[1])):
                 chunks += 1
             
-        return chunks
 
     # Generates the optimal mapping between the words of the translation and the reference;
     # every word in each string maps to at most one word in the other string.
