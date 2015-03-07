@@ -47,9 +47,9 @@ class Meteor:
         # note: the -n option does not work in the original code
         count = 1
         for h1, h2, ref in islice(self.sentences, self.num_sentences):
-            h1 = lowercase(remove_weird_words(h1))
-            h2 = lowercase(remove_weird_words(h2))
-            ref = lowercase(remove_weird_words(ref))
+            h1 = lowercase(h1)
+            h2 = lowercase(h2)
+            ref = lowercase(ref)
 
             score_1 = self.score(h1, ref)
             score_2 = self.score(h2, ref)
@@ -60,7 +60,8 @@ class Meteor:
                 sys.stderr.write(str(count) + " finished. ")
 
     def score(self, translation, reference):
-        best_alignment = self.get_best_alignment(translation, reference)
+        # TODO TEST
+        best_alignment = self.get_best_alignment2(translation, reference)
 
         mapped_unigrams = float(sum([1 for mapping in best_alignment if mapping[1] != None]))
         if mapped_unigrams == 0.0:
@@ -140,7 +141,11 @@ class Meteor:
                 best_alignment = alignment
 
         return best_alignment
+    def get_best_alignment2(self, translation, reference):
+        max_alignments = self.create_word_alignments(translation, reference)
 
+        return max_alignments[0]
+    
     def create_word_alignments(self, translation, reference): 
         mappings = dict(zip(translation, [set() for _ in range(len(translation))]))
         for word in translation:
@@ -159,7 +164,7 @@ class Meteor:
         self.curr_alignments = []
         self.generate_alignments(translation, reference, mappings, [])
         for alignment in self.curr_alignments:
-            l = len(alignment)
+            l = sum([1 for a in alignment if a[1] != None])
             if l > maximum:
                 maximum = l
                 max_alignments = [alignment]
