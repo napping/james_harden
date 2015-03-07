@@ -60,8 +60,7 @@ class Meteor:
                 sys.stderr.write(str(count) + " finished. ")
 
     def score(self, translation, reference):
-        # TODO TEST
-        best_alignment = self.get_best_alignment2(translation, reference)
+        best_alignment = self.get_best_alignment(translation, reference)
 
         mapped_unigrams = float(sum([1 for mapping in best_alignment if mapping[1] != None]))
         if mapped_unigrams == 0.0:
@@ -141,6 +140,8 @@ class Meteor:
                 best_alignment = alignment
 
         return best_alignment
+
+    # No crossings
     def get_best_alignment2(self, translation, reference):
         max_alignments = self.create_word_alignments(translation, reference)
 
