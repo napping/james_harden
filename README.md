@@ -1,5 +1,6 @@
 There are three Python programs here (`-h` for usage):
 
+ - `./meteor` evaluates pairs of MT output hypotheses using METEOR
  - `./evaluate` evaluates pairs of MT output hypotheses by comparing the number of words they match in a reference translation
  - `./check` checks that the output file is correctly formatted
  - `./grade` computes accuracy against human judgements 
